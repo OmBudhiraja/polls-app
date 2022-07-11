@@ -11,7 +11,7 @@ const QuestionCard: React.FC<{
   return (
     <div className="card bg-base-100 shadow-xl">
       <div className="card-body">
-        <h3 className="card-title">{question.question}</h3>
+        <h3 className="card-title line-clamp-2">{question.question}</h3>
         <p className="text-sm text-white/30">Created on {question.createdAt.toDateString()}</p>
         <div className="card-actions mt-5 items-center justify-between">
           <Link href={`/question/${question.id}`}>

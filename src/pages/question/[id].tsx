@@ -48,14 +48,14 @@ const QuestionPageContect: React.FC<{ id: string }> = ({ id }) => {
       <Head>
         <title>Question | OnAVote</title>
       </Head>
-      <header className="flex w-full justify-between mb-10 items-center">
+      <header className="flex w-full justify-between mb-20 items-center">
         <Link href="/">
           <h3 className="text-2xl sm:text-4xl font-bold cursor-pointer">OnAVote</h3>
         </Link>
         {data.isOwner && <div className="bg-gray-700 rounded-md p-2 sm:p-3 ">You made this</div>}
       </header>
       <main className="max-w-2xl mx-auto">
-        <div className="flex justify-between items-center mb-10">
+        <div className="flex justify-between items-center mb-10 gap-5">
           <h1 className="text-3xl font-bold text-center">{data.question?.question}</h1>
           <button
             className="cursor-pointer btn btn-accent btn-circle"
