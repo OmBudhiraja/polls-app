@@ -1,0 +1,44 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["referentialIntegrity"]
+}
+
+datasource db {
+  provider             = "mysql"
+  url                  = env("DATABASE_URL")
+  referentialIntegrity = "prisma"
+}
+
+model Question {
+  id         String    @id @unique @default(cuid())
+  createdAt  DateTime  @default(now())
+  endsAt     DateTime?
+  question   String    @db.VarChar(5000)
+  ownerToken String    @db.VarChar(255)
+  options    Json
+  Vote       Vote[]
+
+  @@index([ownerToken])
+}
+
+model Vote {
+  id        String   @id @unique @default(cuid())
+  createdAt DateTime @default(now())
+
+  choice Int
+
+  voterToken String @db.VarChar(255)
+
+  question   Question @relation(fields: [questionId], references: [id])
+  questionId String
+
+
+  @@unique([voterToken, questionId])
+  @@index([voterToken])
+  @@index([questionId])
+}
+
+//
