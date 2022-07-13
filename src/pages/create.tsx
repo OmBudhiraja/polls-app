@@ -37,8 +37,6 @@ const CreateQuestionForm = () => {
     },
   });
 
-  console.log('form  errrors', errors, errors.options?.message);
-
   if (isLoading || data)
     return (
       <div className="antialiased min-h-screen flex items-center justify-center">
@@ -61,8 +59,6 @@ const CreateQuestionForm = () => {
 
         <form
           onSubmit={handleSubmit((data) => {
-            console.log('data', data);
-
             mutate(data);
           })}
           className="w-full"

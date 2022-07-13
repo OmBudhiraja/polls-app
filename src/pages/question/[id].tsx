@@ -1,38 +1,23 @@
-import FullPageLoader from '@/components/FullPageLoader';
-import { trpc } from '@/utils/trpc';
+import type React from 'react';
+import { useEffect, useState } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
-import React, { useState } from 'react';
-import NotFoundPage from '../404';
 import { MdContentCopy as CopyIcon, MdOutlineCheck } from 'react-icons/md';
+import FullPageLoader from '@/components/FullPageLoader';
+import { trpc } from '@/utils/trpc';
+import NotFoundPage from '../404';
 import { getUrl } from '@/utils/getAppUrl';
+import { inferQueryResponse } from '../api/trpc/[trpc]';
+import ShowPollResults from '@/components/ShowPollResults';
+import AddPollResult from '@/components/AddPollResult';
 
-interface VotesCount {
-  _count: number;
-  choice: number;
-}
-[];
+export type PollData = inferQueryResponse<'questions.get-by-id'>;
 
-function getTotalVotes(votes: VotesCount[]) {
-  return votes.reduce((accumulatedVotes, currentVote) => accumulatedVotes + currentVote._count, 0);
-}
-
-function getVotesForIndex(votes: VotesCount[], index: number) {
-  const totalVotes = getTotalVotes(votes);
-  const votesForIndex = votes.find((vote) => vote.choice === index)?._count ?? 0;
-  const votePercent = totalVotes === 0 ? 0 : (votesForIndex / totalVotes) * 100;
-  return { totalVotes, votesForIndex, percent: votePercent.toFixed(1) };
-}
-
-const QuestionPageContect: React.FC<{ id: string }> = ({ id }) => {
-  const { data, isLoading } = trpc.useQuery(['questions.get-by-id', { id }]);
-  const {
-    mutate,
-    data: voteResponse,
-    isLoading: isSubmittingVote,
-  } = trpc.useMutation(['questions.vote-on-question'], {
-    onSuccess: () => window.location.reload(),
+const QuestionPageContent: React.FC<{ id: string }> = ({ id }) => {
+  const { data, isLoading, refetch } = trpc.useQuery(['questions.get-by-id', { id }], {
+    refetchInterval: false,
+    refetchOnWindowFocus: false,
   });
 
   const [showTickIcon, setShowTickIcon] = useState(false);
@@ -73,37 +58,11 @@ const QuestionPageContect: React.FC<{ id: string }> = ({ id }) => {
           </button>
         </div>
         <div className="flex flex-col gap-4">
-          {(data.question?.options as { text: string }[])?.map((option, index) => {
-            if (data.isOwner || data.myVote) {
-              const { totalVotes, votesForIndex, percent } = getVotesForIndex(data.votes!, index);
-              return (
-                <div key={index}>
-                  <div className="flex justify-between">
-                    <p className="font-bold">{option.text}</p>
-                    <p>{percent} %</p>
-                  </div>
-                  <progress
-                    className="progress progress-secondary w-full"
-                    value={votesForIndex}
-                    max={totalVotes}
-                  ></progress>
-                </div>
-              );
-            }
-
-            return (
-              <button
-                key={index}
-                onClick={() => {
-                  mutate({ questionId: id, optionIndex: index });
-                }}
-                className="btn btn-outline"
-                disabled={isSubmittingVote}
-              >
-                {option.text}
-              </button>
-            );
-          })}
+          {data.isOwner || data.myVote ? (
+            <ShowPollResults id={id} data={data} />
+          ) : (
+            <AddPollResult id={id} data={data} />
+          )}
         </div>
       </main>
     </div>
@@ -116,7 +75,7 @@ const QuestionPage = () => {
 
   if (!id || typeof id !== 'string') return <div>No id</div>;
 
-  return <QuestionPageContect id={id} />;
+  return <QuestionPageContent id={id} />;
 };
 
 export default QuestionPage;
