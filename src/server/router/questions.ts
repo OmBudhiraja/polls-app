@@ -61,6 +61,9 @@ export const questionsRouter = createRouter()
           voterToken: ctx.token,
         },
       });
+
+      ctx.ablyChannel.publish(input.questionId, 'new vote added');
+
       return myVote;
     },
   })

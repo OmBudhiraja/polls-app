@@ -2,7 +2,6 @@ import type React from 'react';
 import { useEffect } from 'react';
 import Ably from 'ably';
 import { trpc } from '@/utils/trpc';
-import { inferQueryResponse } from '@/pages/api/trpc/[trpc]';
 import { PollData } from '@/pages/question/[id]';
 
 interface VotesCount {
