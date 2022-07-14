@@ -5,22 +5,17 @@ import Link from 'next/link';
 import { trpc } from '@/utils/trpc';
 import QuestionCard from '@/components/QuestionCard';
 import FullPageLoader from '@/components/FullPageLoader';
-import { getUrl } from '@/utils/getAppUrl';
 
 const Home: NextPage = () => {
   const [showToast, setShowToast] = useState(false);
   const { data, isLoading } = trpc.useQuery(['questions.get-my-all-questions']);
 
-  const url = getUrl();
-
-  const copyToClipboard = useCallback(
-    (questionId: string) => {
-      navigator.clipboard.writeText(`${url}/question/${questionId}`);
-      setShowToast(true);
-      setTimeout(() => setShowToast(false), 3000);
-    },
-    [url]
-  );
+  const copyToClipboard = useCallback((questionId: string) => {
+    const url = window.location.origin;
+    navigator.clipboard.writeText(`${url}/question/${questionId}`);
+    setShowToast(true);
+    setTimeout(() => setShowToast(false), 3000);
+  }, []);
 
   if (isLoading || !data) return <FullPageLoader />;
 

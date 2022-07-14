@@ -7,7 +7,6 @@ import { MdContentCopy as CopyIcon, MdOutlineCheck } from 'react-icons/md';
 import FullPageLoader from '@/components/FullPageLoader';
 import { trpc } from '@/utils/trpc';
 import NotFoundPage from '../404';
-import { getUrl } from '@/utils/getAppUrl';
 import { inferQueryResponse } from '../api/trpc/[trpc]';
 import ShowPollResults from '@/components/ShowPollResults';
 import AddPollResult from '@/components/AddPollResult';
@@ -21,8 +20,6 @@ const QuestionPageContent: React.FC<{ id: string }> = ({ id }) => {
   });
 
   const [showTickIcon, setShowTickIcon] = useState(false);
-
-  const url = getUrl();
 
   if (isLoading) return <FullPageLoader />;
 
@@ -45,7 +42,8 @@ const QuestionPageContent: React.FC<{ id: string }> = ({ id }) => {
           <button
             className="cursor-pointer btn btn-accent btn-circle"
             onClick={() => {
-              navigator.clipboard.writeText(`${url}/question/${data.question?.id}`);
+              const url = window.location.href;
+              navigator.clipboard.writeText(url);
               setShowTickIcon(true);
               setTimeout(() => setShowTickIcon(false), 1200);
             }}

@@ -26,7 +26,7 @@ const QuestionCard: React.FC<{
             }}
           >
             {showTickIcon ? (
-              <MdOutlineCheck title="Copy Url" size={22} />
+              <MdOutlineCheck title="Url Copied" size={22} />
             ) : (
               <CopyIcon title="Copy Url" size={22} />
             )}
