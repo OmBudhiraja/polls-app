@@ -62,8 +62,10 @@ export const questionsRouter = createRouter()
         },
       });
 
-      ctx.ablyChannel.publish(input.questionId, 'new vote added');
-
+      const ably = new Ably.Realtime.Promise(process.env.ABLY_API_KEY!);
+      const channel = ably.channels.get('pollsResults');
+      await channel.publish(input.questionId, 'new vote added');
+      ably.close();
       return myVote;
     },
   })
