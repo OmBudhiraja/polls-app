@@ -60,7 +60,6 @@ const CreateQuestionForm = () => {
 
         <form
           onSubmit={handleSubmit((data) => {
-            console.log(data);
             mutate(data);
           })}
           className="w-full"

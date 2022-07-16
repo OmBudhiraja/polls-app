@@ -101,8 +101,6 @@ export const questionsRouter = createRouter()
     input: createQuestionValidator,
     async resolve({ input, ctx }) {
       if (!ctx.token) throw new TRPCError({ code: 'UNAUTHORIZED' });
-      console.log(input);
-
       const newQuestion = await ctx.prisma.question.create({
         data: {
           question: input.question,
