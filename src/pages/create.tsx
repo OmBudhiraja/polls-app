@@ -9,6 +9,7 @@ import { trpc } from '@/utils/trpc';
 import {
   CreateQuestionInputType,
   createQuestionValidator,
+  visibility,
 } from '@/shared/create-question-validator';
 
 const CreateQuestionForm = () => {
@@ -27,8 +28,8 @@ const CreateQuestionForm = () => {
 
   const { fields, append, prepend, remove, swap, move, insert } =
     useFieldArray<CreateQuestionInputType>({
-      name: 'options', // unique name for your Field Array,
-      control, // control props comes from useForm (optional: if you are using FormContext)
+      name: 'options',
+      control,
     });
 
   const { mutate, isLoading, data } = trpc.useMutation('questions.create', {
@@ -59,16 +60,18 @@ const CreateQuestionForm = () => {
 
         <form
           onSubmit={handleSubmit((data) => {
+            console.log(data);
             mutate(data);
           })}
           className="w-full"
         >
           <div className="mt-8 w-full">
             <div className="form-control my-10 w-full">
-              <label className="label">
+              <label className="label" htmlFor="question">
                 <span className="label-text font-semibold text-base">Your Question</span>
               </label>
               <input
+                id="question"
                 {...register('question')}
                 type="text"
                 className="input input-bordered w-full block text-gray-300 rounded-md"
@@ -105,6 +108,7 @@ const CreateQuestionForm = () => {
                 );
               })}
             </div>
+
             {fields.length < 10 && (
               <div className="flex items-center my-3">
                 <button
@@ -117,6 +121,65 @@ const CreateQuestionForm = () => {
                 </button>
               </div>
             )}
+
+            <hr className="border-gray-600 mt-5 mb-3" />
+
+            <div className="collapse collapse-arrow">
+              <input type="checkbox" />
+              <div className="collapse-title text-lg font-medium text-gray-400">
+                Additional Settings
+              </div>
+              <div className="collapse-content p-0">
+                <div className="px-8 flex flex-col gap-6">
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-1 sm:gap-5">
+                    <label className="label flex-1" htmlFor="end-date">
+                      <span className="label-text font-semibold text-base">
+                        End Date (optional)
+                      </span>
+                    </label>
+
+                    <input
+                      id="end-date"
+                      {...register('endsAt')}
+                      placeholder="Select End Date"
+                      type="datetime-local"
+                      onInvalid={(e) => {
+                        e.currentTarget.setCustomValidity(
+                          'Please choose a date atleast 2 min in the future'
+                        );
+                      }}
+                      min={(() => {
+                        let date = new Date();
+                        const offset = date.getTimezoneOffset();
+                        date = new Date(date.getTime() + 2 * 1000 * 60 - offset * 60 * 1000);
+                        const res = date.toISOString().split('.')[0]!.slice(0, -3);
+                        return res;
+                      })()}
+                      className="bg-[hsl(220 18% 20%)] text-gray-400 py-2 px-5 rounded-xl input input-bordered flex-1"
+                    />
+                  </div>
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-1 sm:gap-5">
+                    <label className="label flex-1" htmlFor="result-visibility">
+                      <span className="label-text font-semibold text-base">Results Visibility</span>
+                    </label>
+
+                    <select
+                      {...register('visibility')}
+                      id="result-visibility"
+                      className="select select-bordered flex-1 w-full"
+                    >
+                      {Array.from(visibility.keys()).map((v) => (
+                        <option key={v} value={v}>
+                          {visibility.get(v)}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+                <hr className="border-gray-600 mt-5 mb-2" />
+              </div>
+            </div>
+
             <div className="w-full mt-10">
               <input type="submit" className="btn w-full" value="Create question" />
             </div>

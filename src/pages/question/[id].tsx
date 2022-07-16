@@ -1,17 +1,32 @@
 import type React from 'react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
-import { MdContentCopy as CopyIcon, MdOutlineCheck } from 'react-icons/md';
+import {
+  MdContentCopy as CopyIcon,
+  MdOutlineCheck as CheckIcon,
+  MdOutlineInfo as InfoIcon,
+} from 'react-icons/md';
 import FullPageLoader from '@/components/FullPageLoader';
 import { trpc } from '@/utils/trpc';
 import NotFoundPage from '../404';
 import { inferQueryResponse } from '../api/trpc/[trpc]';
 import ShowPollResults from '@/components/ShowPollResults';
 import AddPollResult from '@/components/AddPollResult';
+import EndPoll from '@/components/EndPoll';
 
 export type PollData = inferQueryResponse<'questions.get-by-id'>;
+
+export function hasPollEnded(data: PollData | undefined) {
+  if (!data) return false;
+  if (
+    data.question?.ended ||
+    (data.question?.endsAt && new Date().getTime() > new Date(data.question.endsAt).getTime())
+  )
+    return true;
+  return false;
+}
 
 const QuestionPageContent: React.FC<{ id: string }> = ({ id }) => {
   const { data, isLoading, refetch } = trpc.useQuery(['questions.get-by-id', { id }], {
@@ -20,6 +35,8 @@ const QuestionPageContent: React.FC<{ id: string }> = ({ id }) => {
   });
 
   const [showTickIcon, setShowTickIcon] = useState(false);
+
+  const pollEnded = hasPollEnded(data);
 
   if (isLoading) return <FullPageLoader />;
 
@@ -49,19 +66,25 @@ const QuestionPageContent: React.FC<{ id: string }> = ({ id }) => {
             }}
           >
             {showTickIcon ? (
-              <MdOutlineCheck title="Copy Url" size={22} />
+              <CheckIcon title="Copy Url" size={22} />
             ) : (
               <CopyIcon title="Copy Url" size={22} />
             )}
           </button>
         </div>
         <div className="flex flex-col gap-4">
-          {data.isOwner || data.myVote ? (
-            <ShowPollResults id={id} data={data} />
+          {data.isOwner || data.myVote || pollEnded ? (
+            <ShowPollResults id={id} data={data} pollEnded={pollEnded} />
           ) : (
             <AddPollResult id={id} data={data} />
           )}
         </div>
+        {data.isOwner && !pollEnded && <EndPoll endDate={data.question.endsAt} id={id} />}
+        {pollEnded && data.question.resultsVisibility !== 'hidden' && (
+          <div className="text-gray-500 mt-10 flex gap-2 items-center">
+            <InfoIcon /> Poll has been ended
+          </div>
+        )}
       </main>
     </div>
   );

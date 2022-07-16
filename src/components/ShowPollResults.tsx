@@ -1,6 +1,8 @@
 import type React from 'react';
 import { useEffect } from 'react';
 import Ably from 'ably';
+import { BsCheckCircle as SuccessIcon } from 'react-icons/bs';
+import { MdOutlineInfo as InfoIcon } from 'react-icons/md';
 import { trpc } from '@/utils/trpc';
 import { PollData } from '@/pages/question/[id]';
 
@@ -21,23 +23,58 @@ function getVotesForIndex(votes: VotesCount[], index: number) {
   return { totalVotes, votesForIndex, percent: votePercent.toFixed(1) };
 }
 
-const ShowPollResults: React.FC<{ data: PollData; id: string }> = ({ data, id }) => {
+const ShowPollResults: React.FC<{ data: PollData; id: string; pollEnded: boolean }> = ({
+  data,
+  id,
+  pollEnded,
+}) => {
   const { refetch } = trpc.useQuery(['questions.get-by-id', { id }], {
     refetchInterval: false,
     refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
   });
 
+  const showResults =
+    data.isOwner ||
+    data.question?.resultsVisibility === 'always' ||
+    (data.question?.resultsVisibility === 'after_end' && pollEnded);
+
   useEffect(() => {
+    if (pollEnded) return;
     const ably = new Ably.Realtime.Promise({ authUrl: '/api/createTokenRequest' });
     const channel = ably.channels.get('pollsResults');
-    channel.subscribe(id, () => {
-      refetch();
-    });
+    const refetcher = () => refetch();
+    channel.subscribe(id, refetcher);
 
     return () => {
-      channel.unsubscribe();
+      channel.unsubscribe(id, refetcher);
     };
-  }, [id, refetch]);
+  }, [id, refetch, data, pollEnded]);
+
+  if (!showResults) {
+    return (
+      <div className="self-center mt-20 text-center">
+        <p className="text-2xl text-gray-400 flex gap-4 items-center">
+          {data.myVote ? (
+            <>
+              <SuccessIcon />
+              <span>Your Vote has been submitted</span>
+            </>
+          ) : (
+            <>
+              <InfoIcon />
+              <span>This Poll has ended</span>
+            </>
+          )}
+        </p>
+        <p className="text-gray-500 mt-2">
+          {data.question?.resultsVisibility === 'hidden'
+            ? 'Only owner can see the results'
+            : 'You can see the results once the poll ends'}
+        </p>
+      </div>
+    );
+  }
 
   return (
     <>

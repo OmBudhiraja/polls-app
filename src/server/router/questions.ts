@@ -1,9 +1,16 @@
 import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
 import Ably from 'ably/promises';
+import { Question } from '@prisma/client';
 import { createRouter } from './context';
-import { prisma } from '@/server/db/client';
 import { createQuestionValidator } from '@/shared/create-question-validator';
+
+function hasPollEnded(question: Question) {
+  return (
+    question?.ended ||
+    (question?.endsAt && new Date().getTime() > new Date(question.endsAt).getTime())
+  );
+}
 
 export const questionsRouter = createRouter()
   .query('get-my-all-questions', {
@@ -22,6 +29,8 @@ export const questionsRouter = createRouter()
     async resolve({ ctx, input }) {
       const question = await ctx.prisma.question.findFirst({ where: { id: input.id } });
 
+      if (!question) throw new TRPCError({ code: 'NOT_FOUND' });
+
       const myVote = await ctx.prisma.vote.findFirst({
         where: {
           questionId: input.id,
@@ -33,7 +42,7 @@ export const questionsRouter = createRouter()
 
       const rest = { myVote, isOwner, question };
 
-      if (rest.myVote || rest.isOwner) {
+      if (rest.myVote || rest.isOwner || hasPollEnded(question)) {
         const votes = await ctx.prisma.vote.groupBy({
           where: {
             questionId: input.id,
@@ -54,6 +63,21 @@ export const questionsRouter = createRouter()
     }),
     async resolve({ input, ctx }) {
       if (!ctx.token) throw new TRPCError({ code: 'UNAUTHORIZED' });
+
+      const question = await ctx.prisma.question.findFirst({ where: { id: input.questionId } });
+
+      if (!question) throw new TRPCError({ code: 'NOT_FOUND' });
+
+      if (hasPollEnded(question)) {
+        if (!question.ended) {
+          await ctx.prisma.question.update({
+            where: { id: input.questionId },
+            data: { ended: true },
+          });
+        }
+        throw new TRPCError({ code: 'FORBIDDEN' });
+      }
+
       const myVote = await ctx.prisma.vote.create({
         data: {
           questionId: input.questionId,
@@ -62,10 +86,14 @@ export const questionsRouter = createRouter()
         },
       });
 
-      const ably = new Ably.Realtime.Promise(process.env.ABLY_API_KEY!);
-      const channel = ably.channels.get('pollsResults');
-      await channel.publish(input.questionId, 'new vote added');
-      ably.close();
+      try {
+        const ably = new Ably.Realtime.Promise(process.env.ABLY_API_KEY!);
+        const channel = ably.channels.get('pollsResults');
+        await channel.publish(input.questionId, 'new vote added');
+        ably.close();
+      } catch (err) {
+        console.log('Ably connection limit exceeded??', err);
+      }
       return myVote;
     },
   })
@@ -73,13 +101,48 @@ export const questionsRouter = createRouter()
     input: createQuestionValidator,
     async resolve({ input, ctx }) {
       if (!ctx.token) throw new TRPCError({ code: 'UNAUTHORIZED' });
+      console.log(input);
+
       const newQuestion = await ctx.prisma.question.create({
         data: {
           question: input.question,
           options: input.options,
           ownerToken: ctx.token,
+          endsAt: input.endsAt,
+          resultsVisibility: input.visibility,
         },
       });
       return newQuestion;
+    },
+  })
+  .mutation('endPoll', {
+    input: z.object({
+      id: z.string(),
+    }),
+    async resolve({ ctx, input }) {
+      const question = await ctx.prisma.question.findFirst({
+        where: {
+          id: input.id,
+        },
+      });
+
+      if (!question) {
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'Question not found.' });
+      }
+
+      if (question.ownerToken !== ctx.token) {
+        throw new TRPCError({ code: 'FORBIDDEN', message: 'Only Owner can end the poll' });
+      }
+
+      const updated = await ctx.prisma.question.update({
+        where: {
+          id: input.id,
+        },
+        data: {
+          ended: true,
+        },
+      });
+
+      return updated;
     },
   });

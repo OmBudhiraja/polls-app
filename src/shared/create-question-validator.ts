@@ -1,5 +1,13 @@
 import { z } from 'zod';
 
+export const visibility = new Map([
+  ['always', 'Always Publicly Visible'],
+  ['after_end', 'Public Visible after poll ends'],
+  ['hidden', 'Never Visible to the public'],
+]);
+
+const keys = ['always', 'after_end', 'hidden'] as const;
+
 export const createQuestionValidator = z.object({
   question: z
     .string()
@@ -13,6 +21,18 @@ export const createQuestionValidator = z.object({
     )
     .min(2)
     .max(10),
+  endsAt: z.preprocess((arg) => {
+    if ((typeof arg === 'string' && arg.trim().length) || arg instanceof Date) {
+      const endDate = new Date(arg);
+      const currentDate = new Date();
+
+      const isAfterNow = endDate.getTime() > currentDate.getTime();
+
+      return isAfterNow ? endDate : null;
+    }
+    return null;
+  }, z.date().nullable()),
+  visibility: z.enum(keys),
 });
 
 export type CreateQuestionInputType = z.infer<typeof createQuestionValidator>;

@@ -12,14 +12,22 @@ datasource db {
   referentialIntegrity = "prisma"
 }
 
+enum VisibilityResult {
+  always
+  after_end
+  hidden
+}
+
 model Question {
-  id         String    @id @unique @default(cuid())
-  createdAt  DateTime  @default(now())
-  endsAt     DateTime?
-  question   String    @db.VarChar(5000)
-  ownerToken String    @db.VarChar(255)
-  options    Json
-  Vote       Vote[]
+  id                String           @id @unique @default(cuid())
+  createdAt         DateTime         @default(now())
+  endsAt            DateTime?
+  ended             Boolean          @default(false)
+  question          String           @db.VarChar(5000)
+  ownerToken        String           @db.VarChar(255)
+  resultsVisibility VisibilityResult @default(always)
+  options           Json
+  Vote              Vote[]
 
   @@index([ownerToken])
 }
