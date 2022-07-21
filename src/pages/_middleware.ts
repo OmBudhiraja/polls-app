@@ -8,6 +8,6 @@ export function middleware(req: NextRequest, ev: NextFetchEvent) {
   const random = nanoid();
 
   const res = NextResponse.redirect(req.nextUrl.clone());
-  res.cookie('poll-token', random, { sameSite: 'strict' });
+  res.cookie('poll-token', random, { sameSite: 'lax', httpOnly: true, secure: true });
   return res;
 }
