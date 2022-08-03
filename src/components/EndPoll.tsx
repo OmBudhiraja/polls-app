@@ -19,10 +19,6 @@ const EndPoll: React.FC<{ id: string; endDate: Date | null }> = ({ id, endDate }
     mutate({ id });
   };
 
-  const isClient = () => {
-    return typeof window !== 'undefined' && window.navigator;
-  };
-
   return (
     <>
       <label
