@@ -1,7 +1,14 @@
 import type React from 'react';
+import { useEffect, useState } from 'react';
 import { trpc } from '@/utils/trpc';
 
 const EndPoll: React.FC<{ id: string; endDate: Date | null }> = ({ id, endDate }) => {
+  const [showEndTimeIfExists, setShowEndTimeIfExists] = useState(false);
+
+  useEffect(() => {
+    endDate && setShowEndTimeIfExists(true);
+  }, [endDate]);
+
   const trpcContext = trpc.useContext();
   const { mutate, isLoading } = trpc.useMutation('questions.endPoll', {
     onSuccess: () => {
@@ -11,6 +18,11 @@ const EndPoll: React.FC<{ id: string; endDate: Date | null }> = ({ id, endDate }
   const endPollHandler = () => {
     mutate({ id });
   };
+
+  const isClient = () => {
+    return typeof window !== 'undefined' && window.navigator;
+  };
+
   return (
     <>
       <label
@@ -19,10 +31,10 @@ const EndPoll: React.FC<{ id: string; endDate: Date | null }> = ({ id, endDate }
       >
         {isLoading ? 'Ending the Poll' : 'End Poll Now!'}
       </label>
-      {endDate && navigator && (
+      {showEndTimeIfExists && (
         <p className="text-gray-500 text-sm mt-3">
           Automatically ends in{' '}
-          {endDate.toLocaleString(navigator.language, {
+          {endDate!.toLocaleString(navigator.language, {
             day: '2-digit',
             month: 'short',
             year: 'numeric',
