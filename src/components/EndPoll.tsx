@@ -19,7 +19,7 @@ const EndPoll: React.FC<{ id: string; endDate: Date | null }> = ({ id, endDate }
       >
         {isLoading ? 'Ending the Poll' : 'End Poll Now!'}
       </label>
-      {endDate && (
+      {endDate && navigator && (
         <p className="text-gray-500 text-sm mt-3">
           Automatically ends in{' '}
           {endDate.toLocaleString(navigator.language, {
