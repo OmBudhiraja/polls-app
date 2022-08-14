@@ -7,7 +7,7 @@ generator client {
 }
 
 datasource db {
-  provider             = "mysql"
+  provider             = "postgresql"
   url                  = env("DATABASE_URL")
   referentialIntegrity = "prisma"
 }
@@ -42,7 +42,6 @@ model Vote {
 
   question   Question @relation(fields: [questionId], references: [id])
   questionId String
-
 
   @@unique([voterToken, questionId])
   @@index([voterToken])
