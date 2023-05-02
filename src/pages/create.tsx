@@ -74,7 +74,7 @@ const CreateQuestionForm = () => {
                 {...register('question')}
                 type="text"
                 className="input input-bordered w-full block text-gray-300 rounded-md"
-                placeholder="How do magnets work?"
+                placeholder="Up for Sunday Movie Night??"
               />
               {errors.question && (
                 <p className="text-red-400 mt-2 ml-2 text-sm">{errors.question.message}</p>
